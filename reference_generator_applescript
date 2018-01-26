@@ -1,0 +1,382 @@
+-- setting up to make it easy to get the value of a cell
+
+on getcomponent(cellnumber)
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table "Reference Components"
+					get value of the cell cellnumber
+				end tell
+			end tell
+		end tell
+	end tell
+	set theresult to the result
+	return theresult
+end getcomponent
+
+--getting the value of the cell that has the source name
+
+on getsourcename(i)
+	getcomponent("B" & i)
+	set sourcename to the result as text
+	return sourcename
+end getsourcename
+
+--getting the value of the cell that has the first names
+
+on getfirstnames(i)
+	getcomponent("C" & i)
+	set thetext to the result as text
+	getfirstinitials(thetext)
+	return result
+end getfirstnames
+
+--getting the value of the cell that has the last names
+
+on getlastnames(i)
+	getcomponent("D" & i)
+	set thetext to the result as text
+	getnames(thetext)
+	return result
+end getlastnames
+
+--getting the value of the cell that has the journal name
+
+on getjournalname(i)
+	getcomponent("E" & i)
+	return result
+end getjournalname
+
+--getting the value of the cell that has the year
+
+on getyear(i)
+	getcomponent("F" & i)
+	return result as number
+end getyear
+
+--getting the value of the cell that has the volume number
+
+on getvolume(i)
+	getcomponent("G" & i)
+	return result
+end getvolume
+
+--getting the value of the cell that has the issue number
+
+on getissue(i)
+	getcomponent("H" & i)
+	return result
+end getissue
+
+--getting the value of the cell that has the start page
+
+on getstartpage(i)
+	getcomponent("I" & i)
+	return result
+end getstartpage
+
+--getting the value of the cell that has the end page
+
+on getendpage(i)
+	getcomponent("J" & i)
+	return result
+end getendpage
+
+--getting the row count of a table
+
+on getrowcount(thetable)
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table thetable
+					get row count
+				end tell
+			end tell
+		end tell
+	end tell
+end getrowcount
+
+--finding the word that comes before the semi colon if there is a semi colon
+
+on getthename(thetext)
+	repeat with i from 1 to (count of thetext)
+		if character i of thetext is ";" then
+			return i
+		end if
+	end repeat
+end getthename
+
+--generating a list of all the names separated by semi colons
+
+on getnames(thetext)
+	set firstnames to "" as list
+	set stoprepeat to "Yes"
+	repeat until stoprepeat is "No"
+		try
+			getthename(thetext)
+			set i to the result as number
+		on error
+			set i to (count of thetext) + 1
+		end try
+		set firstnames to firstnames & ((characters 1 thru (i - 1) of thetext) as text) as list
+		try
+			set thetext to ((characters (i + 2) thru (count of thetext) of thetext) as text)
+		on error
+			set stoprepeat to "No"
+		end try
+	end repeat
+	set firstnames to items 2 thru (count of firstnames) of firstnames
+	return firstnames
+end getnames
+
+--generating a list of all the first letters of the names split up by semi colons
+
+on getfirstinitials(thetext)
+	getnames(thetext)
+	set firstnames to result as list
+	set initials to "" as list
+	repeat with i from 1 to (count of firstnames)
+		set initials to initials & ((character 1 of item i of firstnames) as text)
+	end repeat
+	try
+		set initials to ((items 2 thru (count of initials)) of initials)
+	on error
+		set initials to item 2 of initials
+	end try
+end getfirstinitials
+
+--Adding row at bottom of table
+
+on addrowbelow(thetable)
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table thetable
+					make new row
+					get row count
+				end tell
+			end tell
+		end tell
+	end tell
+end addrowbelow
+
+--getting the value of a row
+on getvalue(thetable, cellnumber)
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table thetable
+					get value of the cell cellnumber
+				end tell
+			end tell
+		end tell
+	end tell
+	return result
+end getvalue
+
+--establishing that the last row of the table is avaible for data to be put in
+
+on citationtableprep()
+	getrowcount("Citations")
+	set rownumber to result as number
+	display dialog rownumber
+	getvalue("Citations", (("A" & rownumber) as text))
+	set thevalue to the result as text
+	display dialog thevalue
+	if thevalue is "missing value" then
+		
+	else
+		addrowbelow("Citations")
+	end if
+end citationtableprep
+
+--creating a list of the authors
+on getfullnames(i)
+	getfirstnames(i)
+	set firstnames to result as list
+	getlastnames(i)
+	set lastnames to result as list
+	set fullnames to "" as list
+	repeat with i from 1 to (count of lastnames)
+		set fullnames to fullnames & (((item i of lastnames) & ", " & (item i of firstnames)) as text)
+	end repeat
+	try
+		set fullnames to items 2 thru (count of fullnames) of fullnames
+	on error
+		set fullnames to item 2 of fullnames
+	end try
+end getfullnames
+
+
+
+
+--creating the citation for the source
+getrowcount("Reference Components")
+set rowcount to result as number
+repeat with i from 2 to rowcount
+	
+	--setting up all of the information in variables
+	
+	getsourcename(i)
+	set sourcename to result as text
+	getfullnames(i)
+	set authors to result as list
+	getjournalname(i)
+	set journalname to the result as text
+	getyear(i)
+	set theyear to the round result as text
+	getvolume(i)
+	try
+		set thevolume to the round result as text
+	on error
+		set thevolume to "None"
+	end try
+	getissue(i)
+	try
+		set issue to the round result as text
+	on error
+		set issue to "None"
+	end try
+	getstartpage(i)
+	try
+		set startpage to the round result as text
+	on error
+		set startpage to "None"
+	end try
+	getendpage(i)
+	try
+		set endpage to the round result as text
+	on error
+		set endpage to "None"
+	end try
+	
+	--making sure the last cell of the table is empty
+	
+	getrowcount("Citations")
+	set rownumber to result as number
+	set cellname to (("A" & rownumber) as text)
+	getvalue("Citations", cellname)
+	set thevalue to the result as text
+	if thevalue is "missing value" then
+		
+	else
+		addrowbelow("Citations")
+	end if
+	
+	--setting the selection range to the last cell of the table
+	
+	getrowcount("Citations")
+	set rownumber to result as number
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table "Citations"
+					set selection range to cell (("A" & rownumber) as text)
+				end tell
+			end tell
+		end tell
+	end tell
+	
+	--Actually inputting the citation
+	set numberofauthors to (count of authors)
+	if numberofauthors is greater than 2 then
+		set i to 1
+		repeat numberofauthors - 2 times
+			tell application "System Events"
+				keystroke ((item i of authors) & ", ")
+			end tell
+			set i to i + 1
+		end repeat
+		tell application "System Events"
+			keystroke ((item i of authors) & " ")
+			key code 26 using shift down
+			keystroke (" " & (item (i + 1) of authors) & " " & theyear & ", ")
+		end tell
+	else
+		if numberofauthors is 2 then
+			tell application "System Events"
+				keystroke ((item 1 of authors) & " ")
+				key code 26 using shift down
+				keystroke (" " & (item 2 of authors) & " " & theyear & ", ")
+			end tell
+		else
+			if numberofauthors is 1 then
+				tell application "System Events"
+					keystroke ((item 1 of authors) & " " & theyear & ", ")
+				end tell
+			end if
+		end if
+	end if
+	tell application "System Events"
+		keystroke ("'" & sourcename & "',")
+		keystroke "i" using command down
+		keystroke (" " & journalname)
+		keystroke "i" using command down
+		keystroke (", ")
+	end tell
+	if thevolume is "None" then
+		
+	else
+		tell application "System Events"
+			keystroke ("vol. " & thevolume & ", ")
+		end tell
+	end if
+	if issue is "None" then
+		
+	else
+		tell application "System Events"
+			keystroke ("no. " & issue & ", ")
+		end tell
+	end if
+	if startpage is "None" then
+		tell application "System Events"
+			key code 51
+			keystroke "."
+		end tell
+	else
+		if endpage is "None" then
+			tell application "System Events"
+				keystroke ("p. " & startpage & ".")
+			end tell
+		else
+			tell application "System Events"
+				keystroke ("pp. " & startpage & "-" & endpage & ".")
+			end tell
+		end if
+	end if
+	tell application "Numbers"
+		activate
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+		tell document "Reference List Generator"
+			tell sheet "References"
+				tell table "Reference Components"
+					set selection range to cell "A1"
+				end tell
+			end tell
+		end tell
+	end tell
+end repeat
+
+--Alphabetizing the table
+
+tell application "Numbers"
+	activate
+	open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Reference List Generator.numbers"
+	tell document "Reference List Generator"
+		tell sheet "References"
+			tell table "Citations"
+				sort by column 1 direction ascending
+			end tell
+		end tell
+	end tell
+end tell
